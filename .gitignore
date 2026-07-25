@@ -1,0 +1,38 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# PyTorch Checkpoints & Weights
+*.pth
+*.pt
+*.tar
+*.ckpt
+weight/
+weights/
+
+# Experiment Logs & Results
+experiments/
+results/
+runs/
+logs/
+tensorboard/
+metrics.csv
+metrics.png
+
+# Dataset directories (Store dataset outside or keep split files only)
+dataset/*
+!dataset/README.md
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Virtual Environments
+venv/
+env/
+.venv/
+.conda/
