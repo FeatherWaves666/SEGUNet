@@ -126,38 +126,6 @@ class mIoU:
         self.total_label = 0
 
 
-class nIoU:
-    """
-    Computes Normalized IoU (nIoU) metric.
-    nIoU = (1/N) * sum(TP[i] / (T[i] + P[i] - TP[i]))
-    """
-    def __init__(self):
-        self.reset()
-
-    def update(self, preds: torch.Tensor, labels: torch.Tensor):
-        predict = (preds > 0).float()
-        if len(labels.shape) == 3:
-            target = labels.float().unsqueeze(1)
-        elif len(labels.shape) == 4:
-            target = labels.float()
-        else:
-            raise ValueError("Unknown target dimension")
-
-        assert predict.shape == target.shape, f"Shape mismatch: {predict.shape} vs {target.shape}"
-        true_positive = (predict * target).sum()
-        true_total = target.sum()
-        pred_total = predict.sum()
-
-        self.sum_niou += true_positive / (true_total + pred_total - true_positive + np.spacing(1))
-        self.num_images += 1
-
-    def get(self):
-        return self.sum_niou / (self.num_images + np.spacing(1))
-
-    def reset(self):
-        self.sum_niou = 0.0
-        self.num_images = 0
-
 
 def cal_tp_pos_fp_neg(output: torch.Tensor, target: torch.Tensor, nclass: int, score_thresh: float):
     predict = (torch.sigmoid(output) > score_thresh).float()

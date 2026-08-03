@@ -422,27 +422,3 @@ class SEG_UNet(nn.Module):
         else:
             output = self.output_0(x_d0)
             return [], output
-
-
-if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    input_channels = 1
-    batch_size = 1
-    height, width = 256, 256
-    x = torch.randn(batch_size, input_channels, height, width).to(device)
-
-    model = SEG_UNet(input_channels).to(device)
-    model.eval()
-
-    total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"SEG-UNet Total Parameters: {total_params:,} ({total_params/1e6:.2f}M)")
-
-    try:
-        from thop import profile
-        flops, params = profile(model, inputs=(x, True), verbose=False)
-        print(f"FLOPs: {flops/1e9:.2f} GFLOPs")
-    except ImportError:
-        print("thop library not found. Install via 'pip install thop' to compute FLOPs.")
-
-    masks, output = model(x, warm_flag=True)
-    print(f"Output prediction shape: {output.shape}")

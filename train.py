@@ -20,8 +20,7 @@ from tensorboardX import SummaryWriter
 from model.SEG_UNet import SEG_UNet
 from model.loss import SLSIoULoss, AverageMeter
 from utils.data import IRSTD_Dataset
-from utils.metric import ROCMetric, PD_FA, mIoU, nIoU
-
+from utils.metric import ROCMetric, PD_FA, mIoU
 
 def set_seed(seed: int = 3407):
     """Set random seed for reproducibility across PyTorch, NumPy, and random."""
@@ -113,7 +112,7 @@ class Trainer(object):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.device = device
 
-        model = SEG_UNet(input_channels=1)
+        model = SEG_UNet(input_channels=3)
 
         if args.multi_gpus and torch.cuda.device_count() > 1:
             print(f"Using {torch.cuda.device_count()} GPUs for parallel training")
@@ -143,15 +142,12 @@ class Trainer(object):
         self.PD_FA = PD_FA(1, 10, args.base_size)
         self.mIoU = mIoU(1)
         self.ROC = ROCMetric(1, 10)
-        self.nIoU = nIoU()
 
         self.best_iou = 0.0
-        self.best_niou = 0.0
         self.warm_epoch = args.warm_epoch
 
         self.train_losses = []
         self.val_ious = []
-        self.val_nious = []
         self.val_pds = []
         self.val_fas = []
 
@@ -187,21 +183,19 @@ class Trainer(object):
         with open(osp.join(self.save_folder, 'config.json'), 'w') as f:
             json.dump(config, f, indent=4)
 
-    def save_checkpoint(self, epoch: int, name: str = 'model_checkpoint', iou: float = None, niou: float = None):
+    def save_checkpoint(self, epoch: int, name: str = 'model_checkpoint', iou: float = None):
         state = {
             'epoch': epoch,
             'state_dict': self.model.module.state_dict() if hasattr(self.model, 'module') else self.model.state_dict(),
             'optimizer': self.optimizer.state_dict(),
-            'iou': self.best_iou,
-            'nIoU': self.best_niou
+            'iou': self.best_iou
         }
         filepath = osp.join(self.save_folder, f'{name}.pth')
         try:
             torch.save(state, filepath)
             log_iou = float(iou) if iou is not None else float(self.best_iou)
-            log_niou = float(niou) if niou is not None else float(self.best_niou)
             with open(osp.join(self.save_folder, 'save_log.txt'), 'a') as f:
-                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Saved {name} epoch={epoch} iou={log_iou:.6f} nIoU={log_niou:.6f}\n")
+                f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} Saved {name} epoch={epoch} iou={log_iou:.6f}\n")
         except Exception as e:
             print(f"Warning: Failed to save checkpoint {filepath}: {e}")
 
@@ -223,7 +217,6 @@ class Trainer(object):
             val_epochs = list(range(len(self.val_ious)))
             if val_epochs:
                 plt.plot(val_epochs, self.val_ious, label='IoU', color='red')
-                plt.plot(val_epochs, self.val_nious, label='nIoU', color='green')
                 plt.plot(val_epochs, self.val_pds, label='PD', color='orange')
             plt.xlabel('Epoch')
             plt.ylabel('Metric')
@@ -239,13 +232,12 @@ class Trainer(object):
                 csv_path = osp.join(self.save_folder, 'metrics.csv')
                 with open(csv_path, 'w', newline='') as csvfile:
                     writer = csv.writer(csvfile)
-                    writer.writerow(['epoch', 'train_loss', 'val_iou', 'val_niou', 'val_pd', 'val_fa'])
+                    writer.writerow(['epoch', 'train_loss', 'val_iou', 'val_pd', 'val_fa'])
                     for i in range(max(len(self.train_losses), len(self.val_ious))):
                         writer.writerow([
                             i,
                             self.train_losses[i] if i < len(self.train_losses) else '',
                             self.val_ious[i] if i < len(self.val_ious) else '',
-                            self.val_nious[i] if i < len(self.val_nious) else '',
                             self.val_pds[i] if i < len(self.val_pds) else '',
                             self.val_fas[i] if i < len(self.val_fas) else ''
                         ])
@@ -293,7 +285,6 @@ class Trainer(object):
         self.mIoU.reset()
         self.PD_FA.reset()
         self.ROC.reset()
-        self.nIoU.reset()
         tbar = tqdm(self.val_loader, desc=f"Validation Epoch {epoch}")
         warm_tag = (epoch > self.warm_epoch)
 
@@ -307,40 +298,30 @@ class Trainer(object):
                 self.mIoU.update(pred, mask)
                 self.PD_FA.update(pred, mask)
                 self.ROC.update(pred, mask)
-                self.nIoU.update(pred, mask)
 
                 pixAcc, mean_IoU = self.mIoU.get()
-                mean_nIoU = self.nIoU.get()
-                tbar.set_description(f"Validation | IoU: {mean_IoU:.4f} | nIoU: {float(mean_nIoU):.4f}")
+                tbar.set_description(f"Validation | IoU: {mean_IoU:.4f}")
 
             FA, PD = self.PD_FA.get(len(self.val_loader))
             pixAcc, mean_IoU = self.mIoU.get()
-            mean_nIoU_val = float(self.nIoU.get())
 
             self.val_ious.append(mean_IoU)
-            self.val_nious.append(mean_nIoU_val)
             self.val_pds.append(PD[0])
             self.val_fas.append(FA[0] * 1e6)
 
             if self.mode == 'train':
                 if hasattr(self, 'writer') and self.writer is not None:
                     self.writer.add_scalar('Metrics/IoU', mean_IoU, epoch)
-                    self.writer.add_scalar('Metrics/nIoU', mean_nIoU_val, epoch)
                     self.writer.add_scalar('Metrics/PD', PD[0], epoch)
                     self.writer.add_scalar('Metrics/FA', FA[0] * 1e6, epoch)
 
                 if mean_IoU > self.best_iou:
                     self.best_iou = float(mean_IoU)
-                    self.save_checkpoint(epoch, 'model_best_iou', iou=mean_IoU, niou=mean_nIoU_val)
-
-                if mean_nIoU_val > self.best_niou:
-                    self.best_niou = float(mean_nIoU_val)
-                    self.save_checkpoint(epoch, 'model_best_niou', iou=mean_IoU, niou=mean_nIoU_val)
+                    self.save_checkpoint(epoch, 'model_best_iou', iou=mean_IoU)
 
             elif self.mode == 'test':
                 print(f"\n--- SEG-UNet Evaluation Results ---")
                 print(f"mIoU : {mean_IoU * 100:.2f}%")
-                print(f"nIoU : {mean_nIoU_val * 100:.2f}%")
                 print(f"Pd   : {PD[0] * 100:.2f}%")
                 print(f"Fa   : {FA[0] * 1e6:.2f} (x 10^-6)")
 
@@ -361,7 +342,7 @@ if __name__ == '__main__':
 
         trainer.plot_metrics()
         trainer.save_checkpoint(args.epochs - 1, 'model_last')
-        print(f"\nTraining completed! Best IoU: {trainer.best_iou:.4f}, Best nIoU: {trainer.best_niou:.4f}")
+        print(f"\nTraining completed! Best IoU: {trainer.best_iou:.4f}")
     else:
         trainer.test(epoch=0)
 
