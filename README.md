@@ -10,9 +10,9 @@ Infrared small-target detection (IRSTD) presents critical challenges due to low 
 
 To address these structural deficiencies, we propose **SEG-UNet**, a specialized segmentation framework that integrates frequency conservation and geometric gradient priors directly into the dense prediction pipeline:
 
-1. **High-frequency Preserving Downsampler (HPD)**: Employs a dual-branch discrete Haar wavelet transform (DWT) to maintain high-frequency spectral components during spatial compression, preventing pooling-induced energy dilution.
-2. **Clutter-suppressing Cross-scale Gating (CCG)**: Utilizes deep abstract semantics as anchors to dynamically filter shallow background noise, resolving the statistical inseparability between targets and thermal clutter.
-3. **Boundary-guided Geometric Restorer (BGR)**: Applies fixed Sobel gradient operators to constrain boundary gradients, reconstructing sharp target contours and avoiding checkerboard artifacts.
+1. **High-frequency Preserving Downsampler (HPD)**: Combines a MaxPool spatial branch with a Haar-DWT spectral branch and adaptively fuses them through channel-wise weighting, preserving frequency information during resolution reduction.
+2. **Clutter-suppressing Cross-scale Gating (CCG)**: Jointly estimates channel-wise gating weights from paired encoder and decoder features, selectively suppressing clutter-dominated responses during skip-connection fusion.
+3. **Boundary-guided Geometric Restorer (BGR)**: Incorporates fixed Sobel-derived gradient cues after spatial upsampling to guide feature reconstruction and preserve compact target boundaries.
 
 Extensive evaluations on public IRSTD benchmarks demonstrate the effectiveness of SEG-UNet. Crucially, SEG-UNet achieves a real-time throughput of **58.46 FPS** on an NVIDIA RTX 4090 GPU, outperforming existing high-accuracy frequency-guided and transformer-based architectures in both inference speed and segmentation accuracy.
 
@@ -22,12 +22,10 @@ Extensive evaluations on public IRSTD benchmarks demonstrate the effectiveness o
 
 ![SEG-UNet Architecture Overview](assets/overview.png)
 
-*Figure 1: The overall architecture of the proposed SEG-UNet and its specialized structural components: (a) High-frequency Preserving Downsampler (HPD), (b) Macro Backbone, (c) Boundary-guided Geometric Restorer (BGR), (d) Micro Assembly, and (f) Clutter-suppressing Cross-scale Gating (CCG).*
-
-Mathematical formulation of key structural interventions:
-- **HPD**: $\text{HPD}(x) = \psi( [ x_{\text{pool}} \odot s_1, x_{\text{dwt}} \odot s_2 ] )$
-- **CCG**: $\text{CCG}(x_e, x_d) = [x_e, x_d] \odot s$
-- **BGR**: $\text{BGR}(x) = x^{\text{up}} \odot (1 + a)$
+*Figure 1: Overall architecture of SEG-UNet and its specialized structural components:
+(a) Macro Backbone, (b) High-frequency Preserving Downsampler (HPD),
+(c) Boundary-guided Geometric Restorer (BGR), and
+(d) Clutter-suppressing Cross-scale Gating (CCG).*
 
 ---
 
@@ -67,23 +65,11 @@ Mathematical formulation of key structural interventions:
 
 ---
 
-### Model Complexity, Speed, and Accuracy (on IRSTD-1k)
-
-| Method | Parameters (M) ↓ | FLOPs (G) ↓ | FPS ↑ | IoU (%) ↑ |
-| :--- | :---: | :---: | :---: | :---: |
-| **MSHNet** | <u>4.07</u> | 6.11 | **98.07** | 67.16 |
-| **PConv** | **4.06** | **6.03** | <u>90.82</u> | 67.08 |
-| **NS-FPN** | 4.17 | 7.97 | 47.77 | <u>69.29</u> |
-| **SCTransNet** | 11.33 | 10.12 | 41.92 | 68.64 |
-| **SEG-UNet (Ours)** | 4.92 | <u>7.00</u> | 58.46 | **70.14** |
-
----
-
 ### Qualitative Comparison across Complex Scenarios
 
 ![Qualitative Visual Results](assets/visual_result.png)
 
-*Figure 2: Qualitative comparison of SEG-UNet against state-of-the-art methods across 5 challenging IRSTD scenarios (Water Clutter, Complex Background, Road, Sky Clutter, and Terrain Clutter). Red, yellow, and green boxes denote false alarms, missed detections, and correct detections, respectively.*
+*Figure 2: Qualitative comparison of SEG-UNet against representative state-of-the-art methods across six challenging IRSTD scenarios: Building Interference, Multi Target, Road Infrastructure, Sea Surface Glint, Sky Clutter, and Vegetation Clutter. Red, yellow, and green boxes denote false alarms, missed detections, and correct detections, respectively.*
 
 ---
 
@@ -174,6 +160,8 @@ The best model weights are available via Baidu Netdisk:
 
 ## Citation
 
+If you find this work useful, please consider citing our paper.  
+The BibTeX entry will be updated upon publication.
 
 
 ---
