@@ -1,20 +1,20 @@
-# SEG-UNet: Spectral--Edge Gated U-Net for Real-Time Infrared Small Target Detection
+# SEG-UNet: Spectral-Edge Gated U-Net for Real-Time Infrared Small Target Detection
 
-Official PyTorch implementation of the paper **"SEG-UNet: Spectral--Edge Gated U-Net for Real-Time Infrared Small Target Detection"**.
+Official PyTorch implementation of the paper **"SEG-UNet: Spectral-Edge Gated U-Net for Real-Time Infrared Small Target Detection"**.
 
 ---
 
-## Abstract
+## Overview
 
 Infrared small-target detection (IRSTD) remains challenging due to low thermal contrast, complex background clutter, and the extremely small spatial extent of target signatures. Conventional encoder-decoder architectures often struggle in these low-signal thermal scenarios because spatial downsampling can weaken fine target responses, skip connections may propagate clutter-dominated features, and generic upsampling can distort compact target boundaries.
 
 To address these limitations, we propose **SEG-UNet**, a specialized segmentation framework that incorporates frequency-aware downsampling, cross-scale clutter suppression, and gradient-guided boundary restoration into a unified encoder-decoder architecture:
 
-1. **High-frequency Preserving Downsampler (HPD)**: Combines a MaxPool spatial branch with a Haar-DWT spectral branch that retains all wavelet sub-bands, and adaptively fuses the two branches through channel-wise weighting to preserve informative frequency cues during resolution reduction.
-2. **Clutter-suppressing Cross-scale Gating (CCG)**: Jointly estimates channel-wise gating weights from encoder and decoder features, adaptively regulating skip-connection information to reduce the propagation of clutter-dominated responses.
-3. **Boundary-guided Geometric Restorer (BGR)**: Introduces fixed Sobel-derived gradient cues after spatial upsampling to guide feature refinement and improve the reconstruction of compact target boundaries.
+1. **High-Frequency Preserving Downsampler (HPD)**: Combines a MaxPool spatial branch with a Haar-DWT spectral branch that retains all wavelet sub-bands, and adaptively fuses the two branches through channel-wise weighting to preserve informative frequency cues during resolution reduction.
+2. **Clutter-Suppressing Cross-scale Gating (CCG)**: Jointly estimates channel-wise gating weights from encoder and decoder features, adaptively regulating skip-connection information to reduce the propagation of clutter-dominated responses.
+3. **Boundary-Guided Geometric Restorer (BGR)**: Introduces fixed Sobel-derived gradient cues after spatial upsampling to guide feature refinement and improve the reconstruction of compact target boundaries.
 
-Extensive experiments on the **IRSTD-1K** and **NUAA-SIRST** benchmarks demonstrate the effectiveness of SEG-UNet. The model achieves **70.14% IoU** on IRSTD-1K and **78.57% IoU** on NUAA-SIRST, while obtaining the lowest false-alarm rates of **4.71 × 10⁻⁶** and **1.06 × 10⁻⁶**, respectively. Despite its lightweight design, SEG-UNet contains only **4.92M parameters** and **7.00G FLOPs**, and achieves real-time inference at **58.46 FPS** on an NVIDIA RTX 4090 GPU.
+Extensive experiments on the **IRSTD-1K** and **NUAA-SIRST** benchmarks demonstrate the effectiveness of SEG-UNet. The model achieves **70.14% IoU** on IRSTD-1K and **78.57% IoU** on NUAA-SIRST, while obtaining the lowest false-alarm rates of **4.71 × 10⁻⁶** and **1.06 × 10⁻⁶**, respectively. Despite its lightweight design, SEG-UNet contains only **4.92 M parameters** and **7.00 G FLOPs**, and achieves real-time inference at **58.46 FPS** on an NVIDIA RTX 4090 GPU.
 
 ---
 
@@ -23,19 +23,19 @@ Extensive experiments on the **IRSTD-1K** and **NUAA-SIRST** benchmarks demonstr
 ![SEG-UNet Architecture Overview](assets/overview.png)
 
 *Figure 1: Overall architecture of SEG-UNet and its specialized structural components:
-(a) Macro Backbone, (b) High-frequency Preserving Downsampler (HPD),
-(c) Boundary-guided Geometric Restorer (BGR), and
-(d) Clutter-suppressing Cross-scale Gating (CCG).*
+(a) Macro Backbone, (b) High-Frequency Preserving Downsampler (HPD),
+(c) Clutter-Suppressing Cross-scale Gating (CCG), and
+(d) Boundary-Guided Geometric Restorer (BGR).*
 
 ---
 
 ## Quantitative & Qualitative Results
 
-### Benchmark Quantitative Comparison on IRSTD-1k and NUAA-SIRST
+### Benchmark Quantitative Comparison on IRSTD-1K and NUAA-SIRST
 
 > **Note**: **Bold** indicates the best score, and <u>underline</u> indicates the second-best score.
 
-| Method                     |      Type      | IRSTD-1k $IoU$ (%) ↑ | IRSTD-1k $P_d$ (%) ↑ | IRSTD-1k $F_a$ ($\times 10^{-6}$) ↓ | NUAA-SIRST $IoU$ (%) ↑ | NUAA-SIRST $P_d$ (%) ↑ | NUAA-SIRST $F_a$ ($\times 10^{-6}$) ↓ |
+| Method                     |      Type      | IRSTD-1k $IoU$ (%) ↑ | IRSTD-1K $P_d$ (%) ↑ | IRSTD-1k $F_a$ ($\times 10^{-6}$) ↓ | NUAA-SIRST $IoU$ (%) ↑ | NUAA-SIRST $P_d$ (%) ↑ | NUAA-SIRST $F_a$ ($\times 10^{-6}$) ↓ |
 | :------------------------- | :------------: | :------------------: | :------------------: | :---------------------------------: | :--------------------: | :--------------------: | :-----------------------------------: |
 | **Max-Median** (1999)      |   Filtering    |         7.00         |        65.21         |                59.73                |          4.17          |         69.20          |                 55.33                 |
 | **Top-Hat** (2010)         |   Filtering    |        10.06         |        75.11         |                1432                 |          7.14          |         79.84          |                 1012                  |
@@ -69,7 +69,7 @@ Extensive experiments on the **IRSTD-1K** and **NUAA-SIRST** benchmarks demonstr
 
 ![Qualitative Visual Results](assets/visual_result.png)
 
-*Figure 2: Qualitative comparison of SEG-UNet against representative state-of-the-art methods across six challenging IRSTD scenarios: Building Interference, Multi Target, Road Infrastructure, Sea Surface Glint, Sky Clutter, and Vegetation Clutter. Red, yellow, and green boxes denote false alarms, missed detections, and correct detections, respectively.*
+*Figure 2: Qualitative comparison of SEG-UNet against representative state-of-the-art methods across six challenging IRSTD scenarios: Building Interference, Multi-Target, Road Infrastructure, Sea Surface Glint, Sky Clutter, and Vegetation Clutter. Red, yellow, and green boxes denote false alarms, missed detections, and correct detections, respectively.*
 
 ---
 
@@ -151,7 +151,7 @@ python test.py --dataset-dir ./dataset/IRSTD-1k \
 
 ---
 
-## The best weights
+## Pretrained weights
 
 The best model weights are available via Baidu Netdisk:
 
